@@ -1,5 +1,8 @@
 package com.xavi.service;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,9 +36,65 @@ public class ServiceGame {
 	 * code and start the game.
 	 */
 	public Player start() {
-		Player player = new Player();
-		log.debug("Start Game Service");
+		String secretCode = generateSecretCode();
+		log.debug("Secret Code: " + secretCode);
+		Player player = playUser(secretCode);
 		return player;
+	}
+
+	/**
+	 * It requests a code from the user and controls the number of movements.
+	 * 
+	 * @param secretCode auto generate
+	 * @return Player. The results of game and history
+	 */
+	public Player playUser(String secretCode) {
+		Player player = new Player();
+		int numMove = 0;
+		player.setSecretCode(secretCode);
+		while (numMove < 10) {
+			numMove++;
+			String code = moveUser();
+			String[] userCode = code.split("");
+			Moves move = checkCode(secretCode, userCode);
+			move.setCode(code);
+			move.setNumMove(numMove);
+			player.getListMoves().add(move);
+			printHistory(player);
+			if (move.getRed() == 4) {
+				System.out.println("-------------------------------- You Win!!! --------------------------------");
+				player.setWin(true);
+				break;
+			} else if (numMove == 10) {
+				System.out.println("-------------------------------- You Lose!!! --------------------------------");
+			}
+		}
+
+		return player;
+	}
+
+	/**
+	 * It requests a code from the user , converts it to uppercase and validates it.
+	 * 
+	 * @return Player. Add generated code in the object.
+	 */
+	public String moveUser() {
+		Scanner scan = new Scanner(System.in);
+		boolean exit = false;
+		String result = "";
+
+		while (!exit) {
+			System.out.print("Enter four letters (B, G, O, P, R, Y): ");
+			result = scan.next();
+			if (validate(result)) {
+				result = result.toUpperCase();
+				exit = true;
+			} else {
+				System.out.println("The letters " + result + " are not valid");
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -47,8 +106,47 @@ public class ServiceGame {
 	 * @return Moves, returns the number of position and color hits.
 	 */
 	public Moves checkCode(String secretCode, String[] userCode) {
-		Moves move = new Moves();
+		List<String> listSecert = new ArrayList<String>();
+		List<String> listUser = new ArrayList<String>();
 
+		int red = 0;
+		int white = 0;
+		String[] s = secretCode.split("");
+		for (int i = 0; i < s.length; i++) {
+			String secret = s[i];
+			String user = userCode[i];
+			if (secret.equals(user)) {
+				red++;
+			} else {
+				listSecert.add(s[i]);
+				listUser.add(user);
+			}
+		}
+		if (listSecert.size() > 0) {
+			boolean exit = false;
+			int i = 0;
+			while (!exit) {
+				String secret = listSecert.get(i);
+				if (listUser.contains(secret)) {
+					int posUser = listUser.indexOf(secret);
+					listUser.remove(posUser);
+					listSecert.remove(i);
+					white++;
+					if (listSecert.size() == 0) {
+						exit = true;
+					}
+				} else {
+					listSecert.remove(i);
+					if (listSecert.size() == 0) {
+						exit = true;
+					}
+				}
+			}
+
+		}
+		Moves move = new Moves();
+		move.setRed(red);
+		move.setWhite(white);
 		return move;
 	}
 
@@ -61,5 +159,30 @@ public class ServiceGame {
 	public boolean validate(String code) {
 		code = code.toUpperCase();
 		return pattern.matcher(code).matches();
+	}
+
+	/**
+	 * Generate the secret code random
+	 * 
+	 * @return result the secret code generated
+	 */
+	public String generateSecretCode() {
+		String result = "";
+		for (int i = 0; i < 4; i++) {
+			result = result + colors[(int) (Math.random() * 5 + 1)];
+		}
+		return result;
+	}
+
+	/**
+	 * print the board, the history of the plays and how many moves we have made.
+	 */
+	private void printHistory(Player player) {
+		System.out.println("-------- BOARD --------");
+		for (Moves move : player.getListMoves()) {
+			System.out.println(move.getNumMove() + " - Code: [" + move.getCode() + "]" + " Red: " + move.getRed()
+					+ " White: " + move.getWhite());
+		}
+		System.out.println("-------- BOARD --------");
 	}
 }

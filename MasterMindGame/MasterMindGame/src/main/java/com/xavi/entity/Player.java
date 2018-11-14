@@ -1,5 +1,6 @@
 package com.xavi.entity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Player {
@@ -11,7 +12,7 @@ public class Player {
 	private List<Moves> listMoves;
 
 	public Player() {
-
+		listMoves = new ArrayList<Moves>();
 	}
 
 	public Player(boolean win, String secretCode, List<Moves> listMoves) {
